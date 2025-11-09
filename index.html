@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DEMO — Mock Exam Result (Local Only)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;background:#f3f6f8;padding:30px}
+  .card{max-width:760px;margin:0 auto;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);padding:24px}
+  h1{margin:0 0 12px;font-size:20px}
+  .demo-banner{background:#ffdf00;color:#000;padding:10px;border-radius:6px;font-weight:700;text-align:center;margin-bottom:18px}
+  label{display:block;margin-top:12px;font-weight:600}
+  input[type="text"], input[type="date"]{width:100%;padding:10px;border-radius:6px;border:1px solid #d0d6db;margin-top:6px;box-sizing:border-box}
+  button{margin-top:16px;padding:10px 14px;border-radius:6px;border:0;background:#1976d2;color:#fff;font-weight:700;cursor:pointer}
+  .result{margin-top:22px;padding:14px;border-radius:6px;border:1px solid #e1e6ea;background:#fbfdff}
+  .watermark{position:fixed;right:10px;top:10px;background:rgba(255,0,0,0.08);color:#900;border:2px dashed rgba(255,0,0,0.15);padding:8px 10px;border-radius:6px;font-weight:800}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th,td{padding:8px 6px;border-bottom:1px solid #eee;text-align:left}
+  .pass{color:green;font-weight:700}
+  .fail{color:crimson;font-weight:700}
+  .meta{color:#556; font-size:13px}
+  .note{margin-top:10px;font-size:13px;color:#b33}
+</style>
+</head>
+<body>
+<div class="watermark">NPTEL</div>
+<div class="card">
+  <h1>Mock Exam Portal </h1>
+  <div class="demo-banner">NPTEL RESULTS FOR OCT/NOV - 2025</div>
+
+  <label for="email">Email ID</label>
+  <input id="email" type="text" placeholder="enter any email (demo)">
+
+  <label for="dob">Password / DOB (YYYY-MM-DD)</label>
+  <input id="dob" type="date">
+
+  <button id="show">Show Result</button>
+
+  <div id="out" class="result" style="display:none"></div>
+
+  <div class="note">The certificates will be not delivered only soft copies will be sent to mail in 3-4 days </div>
+</div>
+
+<script>
+(function(){
+  const mapName = (emailLower) => {
+    
+    if(emailLower.includes('tharun')) return 'S THARUN KUMAR';
+    if(emailLower.includes('netaji')) return 'G . NETAJIN';
+    if(emailLower.includes('yaswanth')) return 'NAGARAJU YASWANTH';
+    if(emailLower.includes('dinesh')) return 'M DINESH';
+    if(emailLower.includes('dhanush')) return 'R DHANUSH';
+    if(emailLower.includes('roopkumar') || emailLower.includes('roop kumar') || (emailLower.includes('roop') && emailLower.includes('kumar'))) return 'A ROOP KUMAR';
+    // fallback: extract local-part name
+    const local = (emailLower.split('@')[0] || '').replace(/[._0-9]+/g,' ').trim();
+    if(local){
+      return local.split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+    return 'Candidate';
+  };
+
+  const gradeFromPercent = (p) => {
+    if(p>=90) return 'A+';
+    if(p>=80) return 'A';
+    if(p>=70) return 'B+';
+    if(p>=60) return 'B';
+    if(p>=50) return 'C';
+    return 'F';
+  };
+
+  document.getElementById('show').addEventListener('click', () => {
+    const email = document.getElementById('email').value.trim();
+    const dobInput = document.getElementById('dob').value;
+    const out = document.getElementById('out');
+    if(!email){
+      alert('Enter an email (demo).');
+      return;
+    }
+    const name = mapName(email.toLowerCase());
+    // if Madan detected, mark as ABSENT
+if (name === 'B MADAN KUMAR') {
+  out.style.display = 'block';
+  out.innerHTML = `
+    <div style="font-size:18px;font-weight:800">${escapeHtml(name)}</div>
+    <div class="meta">Email: ${escapeHtml(email)}</div>
+    <div class="meta">DOB (as entered): ${dobInput || 'Not provided'}</div>
+    <div class="meta" style="margin-top:8px">Exam Date: ${new Date().toLocaleDateString()}</div>
+    <table>
+      <tr><th>Subject</th><td>ARTIFICIAL INTELLIGENCE FOR PROBLEM SOLVING</td></tr>
+      <tr><th>Result Status</th><td class="fail">ABSENT</td></tr>
+    </table>
+    <div style="margin-top:14px" class="meta">
+      Note: This is a local demo only. This page is not connected to any official system.
+    </div>
+  `;
+  return;
+}
+
+    // deterministic pseudo-random seed from email+dob
+    let seed = 0;
+    const seedStr = (email + '|' + dobInput).toLowerCase();
+    for(let i=0;i<seedStr.length;i++){ seed = ((seed<<5)-seed) + seedStr.charCodeAt(i); seed |= 0; }
+
+    const rand = (max) => {
+      seed = (seed * 16807) | 0;
+      return Math.abs(seed) % max;
+    };
+
+    // External score out of 75 (random but repeatable per input)
+    const external = 20 + rand(56); // 20..75
+    const percent = Math.round((external / 75) * 100);
+    const grade = gradeFromPercent(percent);
+    const pass = percent >= 50;
+    const subject = 'ARTIFICIAL INTELLIGENCE FOR PROBLEM SOLVING';
+
+    out.style.display = 'block';
+    out.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:18px;font-weight:800">${escapeHtml(name)}</div>
+          <div class="meta">Email: ${escapeHtml(email)}</div>
+          <div class="meta">DOB (as entered): ${dobInput || 'Not provided'}</div>
+          <div class="meta" style="margin-top:8px">Exam Date: ${new Date().toLocaleDateString()}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800;color:#1b5e9e">NOC candidate profile</div>
+          <div style="margin-top:14px;font-weight:800;font-size:18px">Result</div>
+        </div>
+      </div>
+
+      <table>
+        <tr><th>Subject</th><td>${escapeHtml(subject)}</td></tr>
+        <tr><th>External (out of 75)</th><td><strong>${external} / 75</strong></td></tr>
+        <tr><th>Final Percentage</th><td><strong>${percent}%</strong></td></tr>
+        <tr><th>Grade</th><td><strong>${grade}</strong></td></tr>
+        <tr><th>Result Status</th><td class="${pass ? 'pass' : 'fail'}">${pass ? 'PASS' : 'FAIL'}</td></tr>
+      </table>
+
+      <div style="margin-top:14px" class="meta">Note: This is a local demo only. This page is not connected to any official system. Do not use for official claims.</div>
+    `;
+  });
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"'`=\/]/g, function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'}[ch];
+    });
+  }
+})();
+</script>
+</body>
+</html>
